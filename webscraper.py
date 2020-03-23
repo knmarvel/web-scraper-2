@@ -11,6 +11,14 @@ phones = []
 
 class MyHTMLParser(HTMLParser):
 
+    def handle_starttag(self, tag, attrs):
+        for attr in attrs:
+            if attr[0] == "href" or attr[0] == "src":
+                if attr[1].startswith("mailto"):
+                    emails.append(attr[1][7:])
+                if attr[1].startswith("/") and not attr[1].startswith("//"):
+                    urls.append(attr[1])
+
     def handle_data(self, data):
         email_finder(data)
         url_finder(data)
@@ -57,6 +65,14 @@ def url_finder(web_text):
         urls.append(urls_found[0])
 
 
+def rel_url_finder(web_text):
+    u_re = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|'
+    u_re += r'[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+    urls_found = re.findall(u_re, web_text)
+    if urls_found:
+        urls.append(urls_found[0])
+
+
 def phone_finder(web_text):
     """returns phone numbers found in web_text"""
     p_re = r'1?\W*([2-9][0-8][0-9])\W*([2-9][0-9]{2})'
@@ -77,19 +93,23 @@ def main(*args):
     info_finder(web_text)
     if phones:
         print("Here are the phone numbers found in this website:")
-        for phone in phones:
+        for phone in sorted(phones):
             print(phone)
     else:
         print("No phone numbers found.")
     if emails:
+        deduped_emails = sorted(list(set(emails)))
         print("Here are the email addresses found in this website:")
-        for email in emails:
+        for email in deduped_emails:
             print(email)
     else:
         print("No emails found.")
     if urls:
+        deduped_urls = sorted(list(set(urls)))
         print("Here are the urls found in this website:")
-        for url in urls:
+        for url in deduped_urls:
+            if url.startswith("/"):
+                url = webpage[:-1] + url
             print(url)
     else:
         print("No urls found.")
